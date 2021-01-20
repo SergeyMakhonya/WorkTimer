@@ -95,7 +95,12 @@ namespace WorkTimer
             var ctxMenu = new ContextMenuStrip();
             ctxMenu.Items.Add("Сколько прошло с начала рабочего дня", null, (o, a) => { SetTotalLeftTime(); });
             ctxMenu.Items.Add("-");
-            ctxMenu.Items.Add("Начать новый день", null, (o, a) => { ResetDay(); });
+            ctxMenu.Items.Add("Начать новый день", null, (o, a) => {
+                if (MessageBox.Show("Начать новый день?", "WorkTimer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    ResetDay();
+                }
+            });
             ctxMenu.Items.Add("-");
             ctxMenu.Items.Add("Закрыть", null, (o, a) => { CloseApp(); });
             ContextMenuStrip = ctxMenu;
@@ -131,8 +136,7 @@ namespace WorkTimer
         {
             if (firstLoad)
             {
-                var now = DateTime.Now;
-                var dt = new DateTime(now.Year, now.Month, now.Day, now.Hour - data.LeftTime.Hours, now.Minute - data.LeftTime.Minutes, now.Second - data.LeftTime.Seconds);
+                var dt = DateTime.Now - data.LeftTime;
                 timer = new Timer(dt);
             }
             else
@@ -156,23 +160,28 @@ namespace WorkTimer
                 labelTime.Text = leftTime.Hours.ToString("00") + ":" + leftTime.Minutes.ToString("00");
                 coroutineBlink = CoroutineGetBlinkColor(int.MaxValue);
                 btnNew.Visible = false;
-                Refresh();
             }
             else
             {
                 TimeSpan roundedTime = TimeUtils.RoundTimespan(leftTime, data.RoundMinutes);
-                TimeSpan diffTime = roundedTime > leftTime
-                    ? roundedTime - leftTime
-                    : leftTime - roundedTime;
+                TimeSpan diffTime;
+
+                if (leftTime > roundedTime)
+                {
+                    diffTime = leftTime - roundedTime;
+                }
+                else
+                {
+                    diffTime = new TimeSpan(0, 0, 0);
+                }
 
                 data.TotalLeftTime += roundedTime;
+                data.LeftTime = new TimeSpan(0, 0, 0);
 
                 coroutineBlink = CoroutineGetBlinkColor(3);
                 labelTime.Text = roundedTime.Hours.ToString("00") + ":" + roundedTime.Minutes.ToString("00");
-                Refresh();
 
-                var now = DateTime.Now;
-                var dt = new DateTime(now.Year, now.Month, now.Day, now.Hour - diffTime.Hours, now.Minute - diffTime.Minutes, now.Second - diffTime.Seconds);
+                var dt = DateTime.Now - diffTime;
                 timer = new Timer(dt);
             }
 
@@ -180,6 +189,7 @@ namespace WorkTimer
             timerBlink.Enabled = true;
 
             SaveData();
+            Refresh();
         }
 
         void SetTotalLeftTime()
