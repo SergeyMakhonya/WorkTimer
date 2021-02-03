@@ -25,6 +25,10 @@ namespace WorkTimer
             else
             {
                 Timer = new Timer(DateTime.Now);
+
+                Data.Instance.LeftTime = new TimeSpan(0, 0, 0);
+                Data.Instance.TotalLeftTime = new TimeSpan(0, 0, 0);
+                Data.Save();
             }
         }
 
